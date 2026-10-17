@@ -1,0 +1,91 @@
+name: M9 remote free-only validation
+
+# No push/PR/schedule triggers: adding this file cannot start billable jobs.
+on:
+  workflow_dispatch:
+    inputs:
+      free_only_confirmed:
+        description: 'Owner verified included minutes/storage AND paid Actions overages are blocked'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m9-free-validation-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  compatibility:
+    # Both owner-controlled gates are required before a hosted VM is allocated.
+    # The workflow cannot itself inspect or enforce account billing settings.
+    if: ${{ inputs.free_only_confirmed && vars.M9_FREE_ONLY == 'true' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os: [windows-2022, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      PIP_DISABLE_PIP_VERSION_CHECK: '1'
+    steps:
+      - name: Checkout including immutable regression baseline
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.22.0'
+      - name: Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12.12'
+      - name: Resolve reviewed source and immutable history
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib, json, os, re, subprocess
+          checkout = Path.cwd()
+          bundle = checkout / 'm9-source.bundle'
+          source = checkout
+          if bundle.exists():
+              manifest = json.loads((checkout / 'm9-source.json').read_text(encoding='utf-8'))
+              assert hashlib.sha256(bundle.read_bytes()).hexdigest() == manifest['sha256']
+              assert re.fullmatch(r'[0-9a-f]{40}', manifest['commit'])
+              subprocess.run(['git', 'bundle', 'verify', str(bundle)], check=True)
+              source = Path(os.environ['RUNNER_TEMP']) / 'm9-reviewed-source'
+              subprocess.run(['git', 'clone', '--no-checkout', str(bundle), str(source)], check=True)
+              subprocess.run(['git', '-C', str(source), 'checkout', '--detach', manifest['commit']], check=True)
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
+              env.write('M9_SOURCE=' + str(source.resolve()) + '\n')
+      - name: Install pinned test dependencies on this disposable remote runner
+        working-directory: ${{ env.M9_SOURCE }}
+        run: |
+          npm ci
+          python -m pip install --no-cache-dir -r tests/m9/requirements-remote.txt
+          npx playwright install chromium
+      - name: Full existing suite and independent M9 checks
+        working-directory: ${{ env.M9_SOURCE }}
+        run: python tests/m9/remote-suite.py
+      - name: Keep compact diagnostic evidence for one day
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m9-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 1
+          if-no-files-found: warn
+          compression-level: 9
+          path: |
+            ${{ env.M9_SOURCE }}/test-output/m9/evidence/
+            ${{ env.M9_SOURCE }}/test-output/m9/logs/
+            ${{ env.M9_SOURCE }}/test-output/browser/results.json
+            ${{ env.M9_SOURCE }}/test-output/ui-results.json
+            ${{ env.M9_SOURCE }}/test-output/m8/native-edge/results.json
+            ${{ env.M9_SOURCE }}/test-output/m8/native-chrome/results.json
+            ${{ env.M9_SOURCE }}/dist/SHA256.json
