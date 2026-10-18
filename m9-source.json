@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "commit": "84608334e05bcaf294c23770919e6d770ef875ec",
-  "sha256": "0f7631b3620a745df27bab2b3ae8246587a328e1d94d1253aec4130dc2739c9d",
+  "commit": "e79c173bec07d30f8da8ce7a94a717839334a75a",
+  "sha256": "913161b0331478b29777fb014929f1f495b24360e547692e85dbd0cbacb7236c",
   "purpose": "M9 private remote validation with approved source history and milestone tags; excludes internal Codex refs"
 }
