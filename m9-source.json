@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "commit": "c5a7a23cd2a573b0eff9ad1898dce8529a5bc942",
-  "sha256": "db27c9d7bd4937ed7b65c2c0636f0f3ece545e2d122c4b010be4ff78766c995b",
-  "purpose": "M9 private remote validation with approved source history and milestone tags; excludes internal Codex refs"
+  "commit": "061ad4f47760f92dea8755629fb846e41cfec759",
+  "sha256": "5ca31a1c415449935ee6afc9181c8af547671d6909ae0bf888e4335a907ae684",
+  "purpose": "Sample retirement and DXF delivery metadata validation; complete reviewed history and immutable milestone tags; excludes internal Codex refs"
 }
