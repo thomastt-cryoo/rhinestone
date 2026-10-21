@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "commit": "061ad4f47760f92dea8755629fb846e41cfec759",
-  "sha256": "5ca31a1c415449935ee6afc9181c8af547671d6909ae0bf888e4335a907ae684",
-  "purpose": "Sample retirement and DXF delivery metadata validation; complete reviewed history and immutable milestone tags; excludes internal Codex refs"
+  "commit": "40279ae02d053e0b349f219fd24ab32d658abeac",
+  "sha256": "d624f79f17e65ccd695a25475cd03ad597cb54b20411ed39238d25cc6e2945f2",
+  "purpose": "Sample retirement and DXF delivery metadata validation; corrected canonical PNG test setup; complete reviewed history and immutable milestone tags; excludes internal Codex refs"
 }
